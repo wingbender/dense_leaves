@@ -1,0 +1,53 @@
+version: "3.2"
+
+services:
+  tf115:
+    build: 
+      dockerfile: ./docker/dockerfile_tf115-gpu
+      context: ../
+    user: ${USER_ID:-1000}:${GROUP_ID:-1000}
+    # command: /bin/bash -c "cd /code/ && jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
+    command: /bin/bash -c "jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
+    volumes:
+      - ~/DenseLeaves/data:/data
+      - ~/DenseLeaves/code:/code
+
+
+
+  # dev:
+  #   build:
+  #     dockerfile: ./docker/dockerfile
+  #     context: ../
+  #     args:
+  #       USER_ID: ${USER_ID:-1000}
+  #       GROUP_ID: ${GROUP_ID:-1000}
+
+  #   user: ${USER_ID:-1000}:${GROUP_ID:-1000}
+  #   # image: denseLeaves/dev
+
+  #   command: /bin/bash -c "cd /code/ && . /home/user/miniconda/etc/profile.d/conda.sh && conda activate denseleaves"
+  #   #&& jupyter notebook --ip 0.0.0.0; while sleep 1000; dodo :; done"
+
+  #   #mounts:
+  #   volumes:
+  #     - ~/DenseLeaves/data:/data
+  #     - ~/DenseLeaves/code:/code
+
+  # analysis:
+  #   build:
+  #     dockerfile: ./docker/dockerfile
+  #     context: ../
+  #     args:
+  #       USER_ID: ${USER_ID:-1000}
+  #       GROUP_ID: ${GROUP_ID:-1000}
+    
+  #   user: ${USER_ID:-1000}:${GROUP_ID:-1000}
+
+  #   command: /bin/bash -c ". /home/user/miniconda/etc/profile.d/conda.sh && conda activate denseleaves && jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
+  #   #mounts:
+  #   volumes:
+  #     - ~/DenseLeaves/data:/data
+  #     - ~/DenseLeaves/code:/code
+    
+
+

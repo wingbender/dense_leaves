@@ -1,0 +1,109 @@
+FROM nvidia/cuda:10.0-base-ubuntu18.04
+
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+ARG PROJECT_VENV=denseleaves
+
+ENV TEMP_MRCNN_DIR /tmp/mrcnn
+ENV TEMP_COCO_DIR /tmp/coco
+ENV MRCNN_DIR /mrcnn
+
+
+# OS
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    libimage-exiftool-perl \
+    bsdtar \
+    curl \
+    git \
+    php-cli \
+    libgl1-mesa-glx \
+    apt-utils \
+    vim \
+    unzip \
+    openssh-client \
+    wget \
+    build-essential \
+    cmake \
+    libopenblas-dev\
+  && rm -rf /var/lib/apt/lists/*
+
+## PHP
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends gnupg2 ca-certificates apt-transport-https && \
+#     curl -s https://packages.sury.org/php/apt.gpg -o- | apt-key add - && \
+#     echo "deb https://packages.sury.org/php/ stretch main" |  tee /etc/apt/sources.list.d/php.list && \
+#     apt-get update && apt-get install -y --no-install-recommends php7.0-cli php7.0-mcrypt \
+#     && rm -rf /var/lib/apt/lists/*
+
+# USER
+RUN groupadd -g ${GROUP_ID} user && \
+    useradd -l -u ${USER_ID} -g user user && \
+    install -d -m 0755 -o user -g user /home/user && \
+    install -d -m 0755 -o user -g user /code && \
+    install -d -m 0755 -o user -g user /data
+
+# create environment
+USER user
+WORKDIR /home/user
+
+# MINICONDA
+RUN curl -so ~/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh \
+ && chmod +x ~/miniconda.sh \
+ && ~/miniconda.sh -b -p ~/miniconda \
+ && rm ~/miniconda.sh
+ENV PATH=/home/user/miniconda/bin:$PATH
+
+RUN conda config --add channels conda-forge
+#consider adding to above line: && conda config --set channel_priority strict
+
+## PROJECT SPECIFIC
+COPY --chown=1000:1000 ./docker/environment.yml ./conda.yml
+RUN conda env create -n ${PROJECT_VENV} -f=./conda.yml && rm ./conda.yml && conda clean -a -y
+
+COPY --chown=1000:1000 ./docker/docker-engine-entrypoint.sh ./
+RUN chmod +x ./docker-engine-entrypoint.sh
+
+# DEVELOPMENT
+# run all shell commands in a conda environment, for the COCO installation, as described here:
+# https://pythonspeed.com/articles/activate-conda-dockerfile/ 
+SHELL ["conda", "run", "-n", "denseleaves", "/bin/bash", "-c"]
+
+run git clone https://github.com/matterport/Mask_RCNN.git $TEMP_MRCNN_DIR
+
+RUN cd $TEMP_MRCNN_DIR && \
+    python setup.py install
+
+RUN git clone https://github.com/waleedka/coco.git $TEMP_COCO_DIR
+
+# pycocotools is installed through the conda environment.yml file
+
+RUN cd $TEMP_COCO_DIR/PythonAPI && make
+    # sed -i "s/\bpython\b/python3/g" Makefile && \
+    # make
+
+RUN mkdir -p $MRCNN_DIR/coco
+
+# JUPYTER STUFF
+RUN miniconda/envs/${PROJECT_VENV}/bin/python -m ipykernel install --user --name ${PROJECT_VENV} --display-name "${PROJECT_VENV}"
+
+RUN  miniconda/envs/${PROJECT_VENV}/bin/jupyter nbextension enable scratchpad/main && \
+     miniconda/envs/${PROJECT_VENV}/bin/jupyter nbextension enable toc2/main && \
+     miniconda/envs/${PROJECT_VENV}/bin/jupyter nbextension enable collapsible_headings/main && \
+     miniconda/envs/${PROJECT_VENV}/bin/jupyter nbextension enable codefolding/main && \
+     miniconda/envs/${PROJECT_VENV}/bin/jupyter nbextension enable execute_time/ExecuteTime
+
+RUN echo "{\
+  \"nbext_hide_incompat\": false\
+}" > /home/user/.jupyter/nbconfig/common.json
+
+RUN miniconda/envs/${PROJECT_VENV}/bin/jupyter notebook --generate-config
+RUN echo "{\
+  \"NotebookApp\": {\
+    \"password\": \"sha1:b4ae08225d6f:ed6e04ae8c46d9710130ab2e7fd17896e00bcb4c\"\
+  }\
+}" > /home/user/.jupyter/jupyter_notebook_config.json
+
+ENV PROJECT_VENV=${PROJECT_VENV}
+ENTRYPOINT ["/home/user/docker-engine-entrypoint.sh"]

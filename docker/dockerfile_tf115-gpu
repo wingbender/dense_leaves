@@ -1,0 +1,71 @@
+FROM tensorflow/tensorflow:1.15.0-gpu-py3-jupyter
+
+
+ENV TEMP_MRCNN_DIR /tmp/mrcnn
+ENV TEMP_COCO_DIR /tmp/coco
+ENV MRCNN_DIR /mrcnn
+
+
+ENV USER_ID=1000
+ENV GROUP_ID=1000
+
+## Update PIP
+RUN pip install --upgrade pip
+
+RUN pip install Cython
+
+RUN pip install scikit-image wandb pycocotools imgaug keras pandas
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    apt-utils \
+    vim \
+    openssh-client \
+    wget \
+    build-essential \
+    cmake \
+    libsm6 \
+    libxext6 \
+    libxrender-dev
+
+
+RUN groupadd -g $GROUP_ID user && \
+    useradd -l -u $USER_ID -g user user && \
+    install -d -m 0755 -o user -g user /home/user && \
+    install -d -m 0755 -o user -g user /code && \
+    install -d -m 0755 -o user -g user /data && \
+    install -d -m 0755 -o user -g user $MRCNN_DIR && \
+    install -d -m 0755 -o user -g user $TEMP_MRCNN_DIR && \
+    install -d -m 0755 -o user -g user $TEMP_COCO_DIR
+
+
+USER user
+
+RUN git clone https://github.com/matterport/Mask_RCNN.git $MRCNN_DIR
+
+RUN git clone https://github.com/waleedka/coco.git $TEMP_COCO_DIR
+
+
+RUN cd $TEMP_COCO_DIR/PythonAPI && \
+    sed -i "s/\bpython\b/python3/g" Makefile && \
+    make
+
+
+RUN wget --progress=bar -O $MRCNN_DIR/mask_rcnn_coco.h5 https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5
+
+# USER
+
+
+RUN /usr/local/bin/jupyter notebook --generate-config
+RUN echo "{\
+  \"NotebookApp\": {\
+    \"password\": \"sha1:b4ae08225d6f:ed6e04ae8c46d9710130ab2e7fd17896e00bcb4c\"\
+  }\
+}" > /home/user/.jupyter/jupyter_notebook_config.json
+
+
+
+WORKDIR /home/user
+
+CMD ["/bin/bash"]
