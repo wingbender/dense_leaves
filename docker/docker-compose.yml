@@ -9,8 +9,19 @@ services:
     # command: /bin/bash -c "cd /code/ && jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
     command: /bin/bash -c "jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
     volumes:
-      - ~/DenseLeaves/data:/data
-      - ~/DenseLeaves/code:/code
+      - ~/dense_leaves/data:/data
+      - ~/dense_leaves/code:/code
+  pytorch:
+    build:
+      dockerfile: ./docker/dockerfile_pytorch-gpu
+      context: ../
+    user: ${USER_ID:-1000}:${GROUP_ID:-1000}
+    # command: /bin/bash -c "cd /code/ && jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
+    command: /bin/bash -c "jupyter notebook --ip 0.0.0.0 --port 8889 --notebook-dir /"
+    volumes:
+      - ~/dense_leaves/data:/data
+      - ~/dense_leaves/code:/code
+
 
 
 

@@ -1,0 +1,37 @@
+name: dense_leaves
+channels:
+  - conda-forge
+  - defaults
+  - pytorch
+dependencies:
+  - pillow=6.1.0
+  - numpy=1.17.2
+  - scikit-image=0.15.0
+  - scipy=1.3.1
+  - matplotlib=3.1.2
+  - matplotlib-base=3.1.2
+  - Cython=0.29.16
+  - imageio=2.5.0
+  - imgaug=0.2.9
+  - jupyter=1.0.0
+  - jupyter_client=5.3.1
+  - jupyter_console=6.0.0
+  - jupyter_core=4.4.0
+  - h5py=2.10.0
+  - ipykernel=5.1.2
+  - ipython=7.8.0
+  - ipywidgets=7.5.1
+  - pandas=0.25.1
+  - tqdm=4.36.1
+  - seaborn=0.9.0
+  - jupyter_contrib_nbextensions=0.5.1
+  - widgetsnbextension=3.5.1
+  - torchvision=0.4.0
+  - pytorch=1.2.0
+  - cudatoolkit=10.0
+  - git=2.23.0
+  - pip=20.0.2
+  - tensorboard=1.15.0
+  - pip:
+    - git+https://github.com/waleedka/coco.git#subdirectory=PythonAPI
+prefix: /home/user/miniconda/envs/denseleaves
