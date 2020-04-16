@@ -28,7 +28,7 @@ class CropDataset(Dataset):
         return inside_bboxes,temp_ids
     
     def __init__(self, img_path, annotation_path, dataset='none', crop_size =224, 
-                 stride = 100, transforms=None, splits = [.25,.15], split_direction = 'v'):
+                 stride = 100, transforms=None, splits = [.3,.2], split_direction = 'v'):
         self.img = Image.open(img_path)
         with open(annotation_path,'r') as f:
             annotations = json.loads(f.read())
@@ -52,6 +52,9 @@ class CropDataset(Dataset):
         if split_direction == 'v':
             test_split = int(width*(1-test_frac))
             val_split = int(test_split*(1-val_frac))
+            if test_split - val_split < crop_size or width - test_split < crop_size:
+                print('splits too small for crop size')
+                raise()
             if dataset == 'train':
                 self.set_box = [0,0,val_split,height]
             elif dataset == 'validation':
@@ -64,6 +67,9 @@ class CropDataset(Dataset):
         elif split_direction == 'h':
             test_split = int(height*(1-test_frac))
             val_split = int(test_split*(1-val_frac))
+            if test_split - val_split < crop_size or height - test_split < crop_size:
+                print('splits too small for crop size')
+                raise()
             if dataset == 'train':
                 self.set_box = [0,0,width,val_split]
             elif dataset == 'validation':
